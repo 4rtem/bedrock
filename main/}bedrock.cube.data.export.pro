@@ -1,10 +1,10 @@
-﻿601,100
+601,100
 602,"}bedrock.cube.data.export"
 562,"VIEW"
 586,"}APQ Staging TempSource"
 585,"}APQ Staging TempSource"
 564,
-565,"lNRMzjSnQ@DLaN>bbB2>VNBiij63@A0u7rwP:1q0MwOlMA3H[_o\eQ1MskB4=^hF8?k7?Lu9xMg6VDx124NyEe1huL5kqCkGWZn?23Ui1m<i9DAOL_ZU1YSq3Y_^RGVFnP7hVV6lsXnoE9DmETMKe>\Rx]oiHj2JnhGaHp4XRO`TRT428B@I\^>AcMzDInqogO4v3jF;"
+565,"eBw?2a;wJgtcl9SawM9QEHFmO[zp<@VqERJpIjwyQ1q5I6CWY2f?zFt[W5;_4oQ4lVOnb[2FD6hFea;FeBOl`>7QfyjveWM9@Wj9uVR4R8?q`6D?IC6dtq8kcchB@3]c9sL;kT_i7Gcv2>h]5HBuzD7rXNDliAcHsAX\kzZQkuN;Vd:Jv_?v]N3D?x:x:DOV<5[a7^jh"
 559,1
 928,0
 593,
@@ -119,8 +119,8 @@ pCubeLogging,"Required: Cube Logging (0 = No transaction logging, 1 = Logging of
 pTemp,"OPTIONAL: Retain temporary view and Subset ( 0 = retain View and Subsets 1 = use temp objects)"
 pFilePath,"OPTIONAL: Export Directory (will default to error file path)"
 pFileName,"OPTIONAL: Export Filename (If Left Blank Defaults to cube_export.csv)"
-pDelim,"OPTIONAL: AsciiOutput delimiter character (Default=comma, exactly 3 digits = ASCII code)"
-pQuote,"OPTIONAL: AsciiOutput quote character (Accepts empty quote, exactly 3 digits = ASCII code)"
+pDelim,"OPTIONAL: AsciiOutput delimiter character (Default=comma, 2-3 digits = ASCII code)"
+pQuote,"OPTIONAL: AsciiOutput quote character (Accepts empty quote, 2-3 digits = ASCII code)"
 pTitleRecord,"OPTIONAL: Include Title Record in Export File? (Boolean 0=false, 1=true, 2=title and filter line Default=1)"
 pSandbox,"OPTIONAL: To use sandbox not base data enter the sandbox name (invalid name will result in process error)"
 pSubN,"OPTIONAL: Create N level subset for all dims not mentioned in pFilter"
@@ -802,7 +802,8 @@ cMsgErrorLevel    = 'ERROR';
 cMsgErrorContent  = 'User:%cUserName% Process:%cThisProcName% ErrorMsg:%sMessage%';
 cLogInfo          = 'Process:%cThisProcName% run with parameters pCube:%pCube%, pView:%pView%, pFilter:%pFilter%, pFilterParallel:%pFilterParallel%, pParallelThreads:%pParallelThreads%, pDimDelim:%pDimDelim%, pEleStartDelim:%pEleStartDelim%, pEleDelim:%pEleDelim%, pSuppressZero:%pSuppressZero%, pSuppressConsol:%pSuppressConsol%, pSuppressRules:%pSuppressRules%, pZeroSource:%pZeroSource%, pCubeLogging:%pCubeLogging%, pTemp:%pTemp%, pFilePath:%pFilePath%, pFileName:%pFileName%, pDelim:%pDelim%, pQuote:%pQuote%, pTitleRecord:%pTitleRecord%, pSandbox:%pSandbox%, pSuppressConsolStrings:%pSuppressConsolStrings%.'; 
 cDefaultView      = Expand( '%cThisProcName%_%cTimeStamp%_%cRandomInt%' );
-cLenASCIICode     = 3;
+cMinLenASCIICode = 2;
+cMaxLenASCIICode = 3;
 
 pFieldDelim       = TRIM(pDelim);
 pDimDelim         = TRIM(pDimDelim);
@@ -911,48 +912,47 @@ Else;
 EndIf;
 
 # Validate file delimiter & quote character
-If( pFieldDelim @= '' );
+If( Trim(pFieldDelim) @= '' );
     pFieldDelim = ',';
 Else;
-    # If length of pFieldDelim is exactly 3 chars and each of them is decimal digit, then the pFieldDelim is entered as ASCII code
+    # If length of pFieldDelim is between 2 and 3 chars and each of them is decimal digit, then the pFieldDelim is entered as ASCII code
     nValid = 0;
-    If ( LONG(pFieldDelim) = cLenASCIICode );
+    If ( LONG(pFieldDelim) <= cMaxLenASCIICode & LONG(pFieldDelim) >= cMinLenASCIICode );
+      nValid = 1;
       nChar = 1;
-      While ( nChar <= cLenASCIICode );
-        If( CODE( pFieldDelim, nChar ) >= CODE( '0', 1 ) & CODE( pFieldDelim, nChar ) <= CODE( '9', 1 ) );
-          nValid = 1;
-        Else;
+      While ( nChar <= LONG(pFieldDelim) );
+        If( CODE( pFieldDelim, nChar ) < CODE( '0', 1 ) % CODE( pFieldDelim, nChar ) > CODE( '9', 1 ) );
           nValid = 0;
         EndIf;
         nChar = nChar + 1;
       End;
     EndIf;
     If ( nValid<>0 );
-      pFieldDelim=CHAR(StringToNumber( pFieldDelim ));
-    Else;
-      pFieldDelim = SubSt( Trim( pFieldDelim ), 1, 1 );
+        pFieldDelim=CHAR(StringToNumber( pFieldDelim ));
+    ELSE;
+        pFieldDelim = SubSt( Trim( pFieldDelim ), 1, 1 );
     EndIf;
 EndIf;
-If( pQuote @= '' );
+
+If( Trim(pQuote) @= '' );
     ## Use no quote character 
 Else;
-    # If length of pQuote is exactly 3 chars and each of them is decimal digit, then the pQuote is entered as ASCII code
+    # If length of pQuote is between 2 and 3 chars and each of them is decimal digit, then the pFieldDelim is entered as ASCII code
     nValid = 0;
-    If ( LONG(pQuote) = cLenASCIICode );
+    If ( LONG(pQuote) <= cMaxLenASCIICode & LONG(pQuote) >= cMinLenASCIICode );
+      nValid = 1;
       nChar = 1;
-      While ( nChar <= cLenASCIICode );
-        If( CODE( pQuote, nChar ) >= CODE( '0', 1 ) & CODE( pQuote, nChar ) <= CODE( '9', 1 ) );
-          nValid = 1;
-        Else;
+      While ( nChar <= LONG(pQuote) );
+        If( CODE( pQuote, nChar ) < CODE( '0', 1 ) % CODE( pQuote, nChar ) > CODE( '9', 1 ) );
           nValid = 0;
         EndIf;
         nChar = nChar + 1;
       End;
     EndIf;
     If ( nValid<>0 );
-      pQuote=CHAR(StringToNumber( pQuote ));
-    Else;
-      pQuote = SubSt( Trim( pQuote ), 1, 1 );
+        pQuote=CHAR(StringToNumber( pQuote ));
+    ELSE;
+        pQuote = SubSt( Trim( pQuote ), 1, 1 );
     EndIf;
 EndIf;
 
